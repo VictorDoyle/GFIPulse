@@ -1,0 +1,27 @@
+{
+  "name": "gfipulse",
+  "version": "1.0.0-alpha",
+  "description": "Good First Issue Pulse - Discord bot that automatically alerts you of open source Issues that need help fixing",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/bot.ts",
+    "build": "tsc",
+    "prod": "node dist/bot.js"
+  },
+  "keywords": [
+    "github",
+    "issues",
+    "PR",
+    "software development",
+    "good first issue"
+  ],
+  "author": "Victor Doyle",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^22.8.4",
+    "axios": "^1.7.7",
+    "discord.js": "^14.16.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
