@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MAX_REPOS = void 0;
 exports.getRepositories = getRepositories;
 // src/constants/repositories
 const fetchRepositories_1 = require("../utils/fetchRepositories");
@@ -31,3 +32,4 @@ function getRepositories() {
         return cachedRepositories;
     });
 }
+exports.MAX_REPOS = 10; // limit to 10 for first phase

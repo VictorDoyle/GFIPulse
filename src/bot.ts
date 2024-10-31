@@ -2,8 +2,9 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
 import axios from 'axios';
-import { getRepositories } from './constants/repositories';
+import { MAX_REPOS } from './constants/repositories';
 import { formatIssueMessage } from './utils/discordMessage';
+import { readFetchedIssues, writeFetchedIssues } from './utils/storeIssues';
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
 const CHANNEL_ID = process.env.CHANNEL_ID!;
@@ -16,25 +17,24 @@ if (!DISCORD_TOKEN || !CHANNEL_ID || !GH_TOKEN) {
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 
 // NOTE: export for e2e and unit tests
-export async function fetchIssues(repo: string) {
-  // labels dont efficiently work when mapped and filtered - they need to be added as url query
-  const url = `https://api.github.com/repos/${repo}/issues?state=open&labels=good%20first%20issue`;
+export async function fetchIssues(page: number) {
+  const url = `https://api.github.com/search/issues?q=label:"good first issue"+is:open&page=${page}`;
   console.log(`Fetching issues from URL: ${url}`);
   try {
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${GH_TOKEN}` },
     });
-    console.log(`Fetched ${response.data.length} issues from ${repo}`);
 
-    if (response.data.length === 0) {
-      console.warn(`No issues found for ${repo}.`);
-    } else {
-      console.log('Issues data:', response.data);
+    // console.log(`Fetched ${response.data.total_count} issues from GitHub on page ${page}`);
+
+    if (!Array.isArray(response.data.items)) {
+      console.error(`Expected response.data.items to be an array, got:`, response.data.items);
+      return [];
     }
 
-    return response.data;
+    return response.data.items;
   } catch (error) {
-    console.error(`Error fetching issues from ${repo}:`, error);
+    console.error(`Error fetching issues:`, error);
     return [];
   }
 }
@@ -60,16 +60,42 @@ export async function postIssuesToDiscord(issues: any[], repo: string) {
 }
 
 export async function monitorIssues() {
-  console.log('Starting to monitor issues...');
-  const repos = await getRepositories();
-  console.log(`Repositories to monitor: ${repos.length}`);
-  for (const repo of repos) {
-    console.log(`Fetching issues for ${repo}...`);
-    const issues = await fetchIssues(repo);
-    console.log(`Found ${issues.length} issues for ${repo}`);
-    if (issues.length) {
-      await postIssuesToDiscord(issues, repo);
+  console.log('Starting to monitor GitHub issues...');
+  const fetchedIssueIds = readFetchedIssues();
+  const newIssues: any[] = [];
+
+  let page = 1;
+  let hasMoreIssues = true;
+
+  while (hasMoreIssues && newIssues.length < MAX_REPOS) {
+    const issues = await fetchIssues(page);
+
+    if (issues.length === 0) {
+      console.log(`No more issues found on page ${page}.`);
+      hasMoreIssues = false;
+      break;
+    } else {
+      // skip resending already fetched issues
+      const filteredIssues = issues.filter((issue: { id: number; }) => !fetchedIssueIds.has(issue.id.toString()));
+      console.log(`Found ${filteredIssues.length} new issues on page ${page}`);
+
+      newIssues.push(...filteredIssues);
+
+      page++;
     }
+  }
+
+  // when bot sends to Discord, update stored issues
+  if (newIssues.length > 0) {
+    const issuesToSend = newIssues.slice(0, MAX_REPOS);
+    for (const issue of issuesToSend) {
+      const repoName = issue.repository_url.split('/').slice(-2).join('/');
+      await postIssuesToDiscord([issue], repoName);
+    }
+    const newIssueIds = issuesToSend.map(issue => issue.id.toString());
+    writeFetchedIssues(newIssueIds);
+  } else {
+    console.log('No new issues to send.');
   }
 }
 
