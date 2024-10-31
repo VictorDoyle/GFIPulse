@@ -1,9 +1,6 @@
 name: Run Discord Bot
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: "0 */24 * * *" # run every 24 hours
 
@@ -28,4 +25,23 @@ jobs:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
-        run: npm start
+        run: |
+          # Run the bot and capture the output
+          npm start
+
+          # Check if the bot ran successfully and if the file has changed
+          if [ $? -eq 0 ]; then
+            if [ -n "$(git status --porcelain data/fetchedissues.json)" ]; then
+              echo "Changes detected. Committing updates..."
+              git config --local user.name "github-actions"
+              git config --local user.email "action@github.com"
+              git add data/fetchedissues.json
+              git commit -m "Update fetched issues from cron job"
+              git push
+            else
+              echo "No changes to commit."
+            fi
+          else
+            echo "Bot execution failed. No changes will be committed."
+            exit 1
+          fi
