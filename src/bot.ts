@@ -1,3 +1,4 @@
+// src/bot.ts
 import 'dotenv/config';
 import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
 import axios from 'axios';
@@ -14,7 +15,8 @@ if (!DISCORD_TOKEN || !CHANNEL_ID || !GH_TOKEN) {
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 
-async function fetchIssues(repo: string) {
+// NOTE: export for e2e and unit tests
+export async function fetchIssues(repo: string) {
   // labels dont efficiently work when mapped and filtered - they need to be added as url query
   const url = `https://api.github.com/repos/${repo}/issues?state=open&labels=good%20first%20issue`;
   console.log(`Fetching issues from URL: ${url}`);
@@ -38,7 +40,7 @@ async function fetchIssues(repo: string) {
 }
 
 
-async function postIssuesToDiscord(issues: any[], repo: string) {
+export async function postIssuesToDiscord(issues: any[], repo: string) {
   const channel = client.channels.cache.get(CHANNEL_ID);
   if (channel && channel.isTextBased()) {
     for (const issue of issues) {
@@ -57,7 +59,7 @@ async function postIssuesToDiscord(issues: any[], repo: string) {
   }
 }
 
-async function monitorIssues() {
+export async function monitorIssues() {
   console.log('Starting to monitor issues...');
   const repos = await getRepositories();
   console.log(`Repositories to monitor: ${repos.length}`);
@@ -74,7 +76,8 @@ async function monitorIssues() {
 client.once('ready', async () => {
   console.log(`Logged in as ${client.user?.tag}!`);
   await monitorIssues();
-  setInterval(monitorIssues, 12 * 60 * 60 * 1000); // check every 12 hours for new issues
+  // running cron job via gitactions so we make sure npm start gracefully exits on completion
+  process.exit(0);
 });
 
 client.login(DISCORD_TOKEN);
