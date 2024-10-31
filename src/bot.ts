@@ -1,10 +1,10 @@
 // src/bot.ts
 import 'dotenv/config';
 import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
-import axios from 'axios';
 import { MAX_REPOS } from './constants/repositories';
 import { formatIssueMessage } from './utils/discordMessage';
 import { readFetchedIssues, writeFetchedIssues } from './utils/storeIssues';
+import { fetchIssues } from './utils/fetchRepositories';
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
 const CHANNEL_ID = process.env.CHANNEL_ID!;
@@ -15,29 +15,6 @@ if (!DISCORD_TOKEN || !CHANNEL_ID || !GH_TOKEN) {
 }
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
-
-// NOTE: export for e2e and unit tests
-export async function fetchIssues(page: number) {
-  const url = `https://api.github.com/search/issues?q=label:"good first issue"+is:open&page=${page}`;
-  console.log(`Fetching issues from URL: ${url}`);
-  try {
-    const response = await axios.get(url, {
-      headers: { Authorization: `Bearer ${GH_TOKEN}` },
-    });
-
-    // console.log(`Fetched ${response.data.total_count} issues from GitHub on page ${page}`);
-
-    if (!Array.isArray(response.data.items)) {
-      console.error(`Expected response.data.items to be an array, got:`, response.data.items);
-      return [];
-    }
-
-    return response.data.items;
-  } catch (error) {
-    console.error(`Error fetching issues:`, error);
-    return [];
-  }
-}
 
 
 export async function postIssuesToDiscord(issues: any[], repo: string) {
