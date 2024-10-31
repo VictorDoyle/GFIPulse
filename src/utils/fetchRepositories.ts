@@ -1,11 +1,11 @@
 // src/utils/fetchRepositories
 import axios from 'axios';
+import { MAX_REPOS } from './../constants/repositories';
 
 const GH_TOKEN = process.env.GH_TOKEN!;
 
 // start with simple query - TODO: dynamic filter via discord cmd
 const SEARCH_QUERY = 'state:open language:JavaScript language:TypeScript';
-const MAX_REPOS = 10; // limit to 10 for firstphase
 
 export async function fetchRepositories(): Promise<string[]> {
   const repos: string[] = [];
@@ -22,7 +22,7 @@ export async function fetchRepositories(): Promise<string[]> {
     return [];
   }
 
-  const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(SEARCH_QUERY)}&order=desc&per_page=${MAX_REPOS}`;
+  const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(SEARCH_QUERY)}&per_page=${MAX_REPOS}`;
 
   try {
     const response = await axios.get(url, {
