@@ -11,11 +11,10 @@
 **Good First Issue Pulse** (GFIP) is a Discord bot designed to help developers find and contribute to open-source projects. It automatically alerts you about open issues that need help fixing by sending messages directly to your Discord channel. Whether you're a beginner looking to start your open-source journey or an experienced developer wanting to give back, this bot makes it easy to find good first issues and stay active.
 
 ---
-
 ## 📸 Demo
 
 Screenshot of the GFIP bot sending an automated discord message to a designated channel.
-![Demo]()
+![Demo](https://github.com/user-attachments/assets/1f189cce-1187-445c-a627-0e4002dfa5f8)
 
 ---
 
