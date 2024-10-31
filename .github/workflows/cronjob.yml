@@ -15,10 +15,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: "16"
+      - name: Install NVM
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+          echo "source $HOME/.nvm/nvm.sh" >> $GITHUB_ENV
+
+      - name: Set Node version using NVM
+        shell: bash
+        run: |
+          source $HOME/.nvm/nvm.sh
+          nvm install
+          nvm use
 
       - name: Install dependencies
         run: npm install
