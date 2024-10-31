@@ -15,10 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.fetchRepositories = fetchRepositories;
 // src/utils/fetchRepositories
 const axios_1 = __importDefault(require("axios"));
+const repositories_1 = require("./../constants/repositories");
 const GH_TOKEN = process.env.GH_TOKEN;
 // start with simple query - TODO: dynamic filter via discord cmd
 const SEARCH_QUERY = 'state:open language:JavaScript language:TypeScript';
-const MAX_REPOS = 10; // limit to 10 for firstphase
 function fetchRepositories() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
@@ -35,7 +35,7 @@ function fetchRepositories() {
             console.error('Error fetching rate limit info:', error);
             return [];
         }
-        const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(SEARCH_QUERY)}&order=desc&per_page=${MAX_REPOS}`;
+        const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(SEARCH_QUERY)}&per_page=${repositories_1.MAX_REPOS}`;
         try {
             const response = yield axios_1.default.get(url, {
                 headers: { Authorization: `Bearer ${GH_TOKEN}` },
