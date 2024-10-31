@@ -5,6 +5,7 @@ import { MAX_REPOS } from './constants/repositories';
 import { formatIssueMessage } from './utils/discordMessage';
 import { readFetchedIssues, writeFetchedIssues } from './utils/storeIssues';
 import { fetchIssues } from './utils/fetchRepositories';
+import { containsSkipWords } from './constants/skipIssues';
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
 const CHANNEL_ID = process.env.CHANNEL_ID!;
@@ -53,7 +54,9 @@ export async function monitorIssues() {
       break;
     } else {
       // skip resending already fetched issues
-      const filteredIssues = issues.filter((issue: { id: number; }) => !fetchedIssueIds.has(issue.id.toString()));
+      const filteredIssues = issues.filter((issue: { id: number; title: string }) =>
+        !fetchedIssueIds.has(issue.id.toString()) && !containsSkipWords(issue.title)
+      );
       console.log(`Found ${filteredIssues.length} new issues on page ${page}`);
 
       newIssues.push(...filteredIssues);
