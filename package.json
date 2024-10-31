@@ -4,7 +4,7 @@
   "description": "Good First Issue Pulse - Discord bot that automatically alerts you of open source Issues that need help fixing",
   "main": "index.js",
   "scripts": {
-    "start": "run-bot.sh",
+    "start": "ts-node src/bot.ts",
     "build": "tsc",
     "test": "jest"
   },

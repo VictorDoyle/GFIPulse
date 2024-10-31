@@ -12,54 +12,43 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchRepositories = fetchRepositories;
+exports.fetchIssues = fetchIssues;
 // src/utils/fetchRepositories
 const axios_1 = __importDefault(require("axios"));
-const repositories_1 = require("./../constants/repositories");
 const GH_TOKEN = process.env.GH_TOKEN;
 // start with simple query - TODO: dynamic filter via discord cmd
-const SEARCH_QUERY = 'state:open language:JavaScript language:TypeScript';
-function fetchRepositories() {
+function fetchIssues(page) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
-        const repos = [];
-        // check self rate limiting
+        const url = `https://api.github.com/search/issues?q=label:"good first issue"+is:open+language:JavaScript+language:TypeScript&page=${page}`;
         const rateLimitUrl = `https://api.github.com/rate_limit`;
+        const headers = { Authorization: `Bearer ${GH_TOKEN}` };
         try {
-            const rateLimitResponse = yield axios_1.default.get(rateLimitUrl, {
-                headers: { Authorization: `Bearer ${GH_TOKEN}` },
-            });
+            const rateLimitResponse = yield axios_1.default.get(rateLimitUrl, { headers });
             console.log('Rate Limit Info:', rateLimitResponse.data);
         }
         catch (error) {
             console.error('Error fetching rate limit info:', error);
             return [];
         }
-        const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(SEARCH_QUERY)}&per_page=${repositories_1.MAX_REPOS}`;
         try {
-            const response = yield axios_1.default.get(url, {
-                headers: { Authorization: `Bearer ${GH_TOKEN}` },
-            });
-            // use for debug if needed
-            // console.log(`API response:`, response.data); 
+            const response = yield axios_1.default.get(url, { headers });
+            const items = response.data.items;
+            if (!Array.isArray(items)) {
+                console.error(`Expected response.data.items to be an array, got:`, items);
+                return [];
+            }
             if (response.data.total_count === 0) {
-                console.warn('No repositories found matching the query.');
+                console.warn('No issues found matching the query.');
             }
-            for (const repo of response.data.items) {
-                // skip readonly or archived
-                if (!repo.archived && !repo.disabled) {
-                    repos.push(repo.full_name); // format: "owner/repo"
-                }
-            }
-            console.log(`Fetched repositories: ${repos.length}`);
-            return repos;
+            return items;
         }
         catch (error) {
             if (axios_1.default.isAxiosError(error)) {
-                console.error('Error fetching repositories:', ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
+                console.error('Error fetching issues:', ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
             }
             else {
-                console.error('Unexpected error fetching repositories:', error);
+                console.error('Unexpected error fetching issues:', error);
             }
             return [];
         }

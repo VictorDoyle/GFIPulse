@@ -8,20 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchIssues = fetchIssues;
 exports.postIssuesToDiscord = postIssuesToDiscord;
 exports.monitorIssues = monitorIssues;
 // src/bot.ts
 require("dotenv/config");
 const discord_js_1 = require("discord.js");
-const axios_1 = __importDefault(require("axios"));
 const repositories_1 = require("./constants/repositories");
 const discordMessage_1 = require("./utils/discordMessage");
 const storeIssues_1 = require("./utils/storeIssues");
+const fetchRepositories_1 = require("./utils/fetchRepositories");
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 const GH_TOKEN = process.env.GH_TOKEN;
@@ -29,28 +25,6 @@ if (!DISCORD_TOKEN || !CHANNEL_ID || !GH_TOKEN) {
     throw new Error("Please define DISCORD_TOKEN, CHANNEL_ID, and GH_TOKEN in GitHub Secrets.");
 }
 const client = new discord_js_1.Client({ intents: [discord_js_1.GatewayIntentBits.Guilds, discord_js_1.GatewayIntentBits.GuildMessages] });
-// NOTE: export for e2e and unit tests
-function fetchIssues(page) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const url = `https://api.github.com/search/issues?q=label:"good first issue"+is:open&page=${page}`;
-        console.log(`Fetching issues from URL: ${url}`);
-        try {
-            const response = yield axios_1.default.get(url, {
-                headers: { Authorization: `Bearer ${GH_TOKEN}` },
-            });
-            // console.log(`Fetched ${response.data.total_count} issues from GitHub on page ${page}`);
-            if (!Array.isArray(response.data.items)) {
-                console.error(`Expected response.data.items to be an array, got:`, response.data.items);
-                return [];
-            }
-            return response.data.items;
-        }
-        catch (error) {
-            console.error(`Error fetching issues:`, error);
-            return [];
-        }
-    });
-}
 function postIssuesToDiscord(issues, repo) {
     return __awaiter(this, void 0, void 0, function* () {
         const channel = client.channels.cache.get(CHANNEL_ID);
@@ -75,13 +49,13 @@ function postIssuesToDiscord(issues, repo) {
 }
 function monitorIssues() {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('Starting to monitor git repo issues to fix...');
+        console.log('Starting to monitor GitHub issues...');
         const fetchedIssueIds = (0, storeIssues_1.readFetchedIssues)();
         const newIssues = [];
         let page = 1;
         let hasMoreIssues = true;
         while (hasMoreIssues && newIssues.length < repositories_1.MAX_REPOS) {
-            const issues = yield fetchIssues(page);
+            const issues = yield (0, fetchRepositories_1.fetchIssues)(page);
             if (issues.length === 0) {
                 console.log(`No more issues found on page ${page}.`);
                 hasMoreIssues = false;
@@ -95,12 +69,11 @@ function monitorIssues() {
                 page++;
             }
         }
-        // when bot sends to discord, update stored issues
+        // when bot sends to Discord, update stored issues
         if (newIssues.length > 0) {
             const issuesToSend = newIssues.slice(0, repositories_1.MAX_REPOS);
-            // each issue linked to repo name
             for (const issue of issuesToSend) {
-                const repoName = issue.repository.full_name;
+                const repoName = issue.repository_url.split('/').slice(-2).join('/');
                 yield postIssuesToDiscord([issue], repoName);
             }
             const newIssueIds = issuesToSend.map(issue => issue.id.toString());
