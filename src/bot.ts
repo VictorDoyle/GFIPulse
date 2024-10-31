@@ -1,27 +1,35 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
 import axios from 'axios';
+import { getRepositories } from './constants/repositories';
+import { formatIssueMessage } from './utils/discordMessage';
 
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
-const CHANNEL_ID = process.env.CHANNEL_ID;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
+const CHANNEL_ID = process.env.CHANNEL_ID!;
+const GH_TOKEN = process.env.GH_TOKEN!;
 
-// array of repos to scan for issues (format: "owner/repo")
-const REPOSITORIES = ["octocat/Hello-World", "openai/gym"]; // TODO: refactor to known list
-
-if (!DISCORD_TOKEN || !CHANNEL_ID || !GITHUB_TOKEN) {
-  throw new Error("Please define DISCORD_TOKEN, CHANNEL_ID, and GITHUB_TOKEN in GitHub Secrets.");
+if (!DISCORD_TOKEN || !CHANNEL_ID || !GH_TOKEN) {
+  throw new Error("Please define DISCORD_TOKEN, CHANNEL_ID, and GH_TOKEN in GitHub Secrets.");
 }
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 
 async function fetchIssues(repo: string) {
-  // TODO: dynamic label fetching in v2
-  const url = `https://api.github.com/repos/${repo}/issues?state=open&labels=Good%20first%20issue`;
+  // labels dont efficiently work when mapped and filtered - they need to be added as url query
+  const url = `https://api.github.com/repos/${repo}/issues?state=open&labels=good%20first%20issue`;
+  console.log(`Fetching issues from URL: ${url}`);
   try {
     const response = await axios.get(url, {
-      headers: { Authorization: `Bearer ${GITHUB_TOKEN}` },
+      headers: { Authorization: `Bearer ${GH_TOKEN}` },
     });
+    console.log(`Fetched ${response.data.length} issues from ${repo}`);
+
+    if (response.data.length === 0) {
+      console.warn(`No issues found for ${repo}.`);
+    } else {
+      console.log('Issues data:', response.data);
+    }
+
     return response.data;
   } catch (error) {
     console.error(`Error fetching issues from ${repo}:`, error);
@@ -29,29 +37,44 @@ async function fetchIssues(repo: string) {
   }
 }
 
-// send to Discord
-async function postIssuesToDiscord(issues: any[], repo: string) {
-  const channel = client.channels.cache.get(CHANNEL_ID) as TextChannel;
-  if (!channel) return;
 
-  issues.forEach(issue => {
-    channel.send(`New issue in **${repo}**: [${issue.title}](${issue.html_url})`);
-  });
+async function postIssuesToDiscord(issues: any[], repo: string) {
+  const channel = client.channels.cache.get(CHANNEL_ID);
+  if (channel && channel.isTextBased()) {
+    for (const issue of issues) {
+      console.log(`Formatting message for issue:`, issue);
+      const issueMessage = formatIssueMessage(issue, repo);
+      console.log(`Sending message to Discord: ${issueMessage}`);
+      try {
+        await (channel as TextChannel).send(issueMessage);
+        console.log(`Sent message for issue: ${issue.title}`);
+      } catch (sendError) {
+        console.error(`Failed to send message for issue ${issue.title}:`, sendError);
+      }
+    }
+  } else {
+    console.error('Channel not found or is not a text channel.');
+  }
 }
 
-// monitor issue tasks in github repos
 async function monitorIssues() {
-  for (const repo of REPOSITORIES) {
+  console.log('Starting to monitor issues...');
+  const repos = await getRepositories();
+  console.log(`Repositories to monitor: ${repos.length}`);
+  for (const repo of repos) {
+    console.log(`Fetching issues for ${repo}...`);
     const issues = await fetchIssues(repo);
+    console.log(`Found ${issues.length} issues for ${repo}`);
     if (issues.length) {
-      postIssuesToDiscord(issues, repo);
+      await postIssuesToDiscord(issues, repo);
     }
   }
 }
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`Logged in as ${client.user?.tag}!`);
-  setInterval(monitorIssues, 0 * 0 * 0); // FIXME: check every 6 hours or find good time here
+  await monitorIssues();
+  setInterval(monitorIssues, 12 * 60 * 60 * 1000); // check every 12 hours for new issues
 });
 
 client.login(DISCORD_TOKEN);
