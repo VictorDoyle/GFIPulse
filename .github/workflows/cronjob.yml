@@ -26,10 +26,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
         run: |
-          # Run the bot and capture the output
           npm start
-
-          # Check if the bot ran successfully and if the file has changed
           if [ $? -eq 0 ]; then
             if [ -n "$(git status --porcelain data/fetchedissues.json)" ]; then
               echo "Changes detected. Committing updates..."
@@ -37,7 +34,9 @@ jobs:
               git config --local user.email "action@github.com"
               git add data/fetchedissues.json
               git commit -m "Update fetched issues from cron job"
-              git push
+              # Set the remote URL to include GH_TOKEN for authentication
+              git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/VictorDoyle/GFIPulse.git
+              git push origin HEAD:main
             else
               echo "No changes to commit."
             fi
