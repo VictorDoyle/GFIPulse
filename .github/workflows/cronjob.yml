@@ -8,14 +8,13 @@ jobs:
   run_bot:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          # custom token not the same as GITHUB_TOKEN
-          token: ${{ secrets.GH_TOKEN }} 
+          token: ${{ secrets.ACTIONS_PUSH_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
@@ -29,6 +28,7 @@ jobs:
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          ACTIONS_PUSH_TOKEN: ${{ secrets.ACTIONS_PUSH_TOKEN }}
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
         run: |
           npm start
@@ -39,7 +39,7 @@ jobs:
               git config --local user.email "action@github.com"
               git add data/fetchedissues.json
               git commit -m "Update fetched issues from cron job"
-              git push origin HEAD:main
+              git push https://${{ secrets.ACTIONS_PUSH_TOKEN }}@github.com/VictorDoyle/GFIPulse.git HEAD:main
             else
               echo "No changes to commit."
             fi
