@@ -7,15 +7,15 @@ on:
 jobs:
   run_bot:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Set the remote origin to include GH_TOKEN immediately after checkout
-      - name: Set up push access with GH_TOKEN
-        run: |
-          git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/VictorDoyle/GFIPulse.git
+        uses: actions/checkout@v3
+        with:
+          # custom token not the same as GITHUB_TOKEN
+          token: ${{ secrets.GH_TOKEN }} 
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
