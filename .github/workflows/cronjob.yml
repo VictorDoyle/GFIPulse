@@ -32,14 +32,22 @@ jobs:
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
         run: |
           npm start
+
           if [ $? -eq 0 ]; then
+            git pull --rebase origin main
+
             if [ -n "$(git status --porcelain data/fetchedissues.json)" ]; then
               echo "Changes detected. Committing updates..."
               git config --local user.name "github-actions"
               git config --local user.email "action@github.com"
               git add data/fetchedissues.json
               git commit -m "Update fetched issues from cron job"
-              git push https://${{ secrets.ACTIONS_PUSH_TOKEN }}@github.com/VictorDoyle/GFIPulse.git HEAD:main
+
+              if ! git push https://${{ secrets.ACTIONS_PUSH_TOKEN }}@github.com/VictorDoyle/GFIPulse.git HEAD:main; then
+                echo "Push failed, trying to pull again..."
+                git pull --rebase origin main
+                git push https://${{ secrets.ACTIONS_PUSH_TOKEN }}@github.com/VictorDoyle/GFIPulse.git HEAD:main
+              fi
             else
               echo "No changes to commit."
             fi
