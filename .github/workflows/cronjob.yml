@@ -3,6 +3,7 @@ name: Run Discord Bot
 on:
   schedule:
     - cron: "0 */24 * * *" # run every 24 hours
+  workflow_dispatch: # keep for debugging
 
 jobs:
   run_bot:
