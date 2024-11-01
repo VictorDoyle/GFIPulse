@@ -3,7 +3,7 @@ name: Run Discord Bot
 on:
   schedule:
     - cron: "0 */24 * * *" # run every 24 hours
-  workflow_dispatch: # keep for debugging
+  workflow_dispatch:  # keep for debugging
 
 jobs:
   run_bot:
@@ -36,6 +36,11 @@ jobs:
 
           if [ $? -eq 0 ]; then
             echo "Checking for changes in fetchedissues.json..."
+
+            if [[ ! -f data/fetchedissues.json ]]; then
+              echo "fetchedissues.json does not exist."
+              exit 1
+            fi
 
             git status data/fetchedissues.json | grep 'modified:' > /dev/null
             if [ $? -eq 0 ]; then
