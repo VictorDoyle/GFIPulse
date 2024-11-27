@@ -5,7 +5,7 @@ const GH_TOKEN = process.env.GH_TOKEN!;
 
 // start with simple query - TODO: dynamic filter via discord cmd
 export async function fetchIssues(page: number) {
-  const url = `https://api.github.com/search/issues?q=label:"good first issue"+is:open+language:JavaScript+language:TypeScript&page=${page}`;
+  const url = `https://api.github.com/search/issues?q=label:"good first issue"+is:open+language:JavaScript+language:TypeScript+no:assignee&page=${page}`;
   const rateLimitUrl = `https://api.github.com/rate_limit`;
   const headers = { Authorization: `Bearer ${GH_TOKEN}` };
 
