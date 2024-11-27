@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const storageFilePath = path.resolve(__dirname, '../../data/fetchedissues.json');
+const storageFilePath = path.resolve(__dirname, '../../data/fetche_issues.json');
 
 export function readFetchedIssues(): Set<string> {
   if (fs.existsSync(storageFilePath)) {

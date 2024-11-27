@@ -3,8 +3,8 @@ name: Run Discord Bot
 on:
   schedule:
     - cron: "0 */24 * * *" # run every 24 hours
-  workflow_dispatch: 
-  
+  workflow_dispatch:
+
 jobs:
   run_bot:
     runs-on: ubuntu-latest
@@ -34,19 +34,19 @@ jobs:
         run: |
           echo "=== Starting the Discord Bot ==="
           npm start
-          
+
           # bot exits on code 0 when npm start completes
           BOT_EXIT_CODE=$?
           if [ $BOT_EXIT_CODE -eq 0 ]; then
             echo "Bot executed successfully."
-            echo "=== Checking for changes in fetchedissues.json ==="
+            echo "=== Checking for changes in fetched_issues.json ==="
 
-            # verify fetchedissues.json has been modified
-            if [ -n "$(git status --porcelain data/fetchedissues.json)" ]; then
-              echo "Changes detected in fetchedissues.json. Committing updates..."
+            # verify fetched_issues.json has been modified
+            if [ -n "$(git status --porcelain data/fetched_issues.json)" ]; then
+              echo "Changes detected in fetched_issues.json. Committing updates..."
               git config --local user.name "github-actions"
               git config --local user.email "action@github.com"
-              git add data/fetchedissues.json
+              git add data/fetched_issues.json
               git commit -m "Update fetched issues from cron job"
 
               echo "=== Pushing changes to main branch ==="
