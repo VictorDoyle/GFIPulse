@@ -1,6 +1,5 @@
 import { createClient } from 'redis';
 
-// Create Redis client
 const client = createClient({
   password: process.env.REDIS_PASSWORD,
   socket: {
@@ -19,7 +18,7 @@ async function connectRedis() {
 
   try {
     await client.connect();
-    isConnected = true; // Mark the client as connected
+    isConnected = true;
     console.log('Connected to Redis Cloud');
   } catch (error) {
     console.error('Error connecting to Redis:', error);
@@ -42,8 +41,8 @@ export async function writeFetchedIssues(issueIds: string[]) {
     await client.sAdd(REDIS_KEY, id);
   }
 
-  // Log the set's contents to verify data is written
   const allIssueIds = await client.sMembers(REDIS_KEY);
+  // debug log for now
   console.log('All stored issue IDs:', allIssueIds);
 
   // TODO: start with a limit of 250 iff not good bump to 500
