@@ -39,7 +39,7 @@ export async function postIssuesToDiscord(issues: any[], repo: string) {
 
 export async function monitorIssues() {
   console.log('Starting to monitor GitHub issues...');
-  const fetchedIssueIds = readFetchedIssues();
+  const fetchedIssueIds = await readFetchedIssues(); // fetch issue IDs from Redis
   const newIssues: any[] = [];
 
   let page = 1;
@@ -73,7 +73,7 @@ export async function monitorIssues() {
       await postIssuesToDiscord([issue], repoName);
     }
     const newIssueIds = issuesToSend.map(issue => issue.id.toString());
-    writeFetchedIssues(newIssueIds);
+    await writeFetchedIssues(newIssueIds); // write to redis
   } else {
     console.log('No new issues to send.');
   }

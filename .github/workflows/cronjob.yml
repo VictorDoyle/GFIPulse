@@ -2,14 +2,14 @@ name: Run Discord Bot
 
 on:
   schedule:
-    - cron: "0 */24 * * *" # run every 24 hours
+    - cron: "0 */24 * * *" # Run every 24 hours
   workflow_dispatch:
 
 jobs:
   run_bot:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Allow the bot to push updates to the repository
 
     steps:
       - name: Checkout code
@@ -31,30 +31,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           ACTIONS_PUSH_TOKEN: ${{ secrets.ACTIONS_PUSH_TOKEN }}
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           echo "=== Starting the Discord Bot ==="
           npm start
 
-          # bot exits on code 0 when npm start completes
+          # Bot exits on code 0 when npm start completes
           BOT_EXIT_CODE=$?
           if [ $BOT_EXIT_CODE -eq 0 ]; then
             echo "Bot executed successfully."
-            echo "=== Checking for changes in fetched_issues.json ==="
-
-            # verify fetched_issues.json has been modified
-            if [ -n "$(git status --porcelain data/fetched_issues.json)" ]; then
-              echo "Changes detected in fetched_issues.json. Committing updates..."
-              git config --local user.name "github-actions"
-              git config --local user.email "action@github.com"
-              git add data/fetched_issues.json
-              git commit -m "Update fetched issues from cron job"
-
-              echo "=== Pushing changes to main branch ==="
-              git push origin main
-            else
-              echo "No changes to commit."
-            fi
           else
-            echo "Bot execution failed with exit code $BOT_EXIT_CODE. No changes will be committed."
+            echo "Bot execution failed with exit code $BOT_EXIT_CODE."
             exit $BOT_EXIT_CODE
           fi
