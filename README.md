@@ -28,3 +28,19 @@ Screenshot of the GFIP bot sending an automated discord message to a designated 
 - **Data-Optimized**: We used Redis to store and shift which Github issues you've already looked at.
 
 ---
+
+## Setting up
+
+- Make sure you have access to CLI Redis, if you don't run `brew install redis`
+- You can check if you have CLI Redis by writing `redis-cli ping` you should get `PONG` back as a response in CLI
+- You'll need to setup a DB via `https://cloud.redis.io/#/`.
+- Hold onto the following values and set them up in your github secrets or a local .env file:
+  - REDIS_HOST
+  - REDIS_PORT
+  - REDIS_PASSWORD
+- Once all three are in your .env or Github Secrets, you should be able to run `npm run start` and it should populate your redis DB with a list of IDs linked to GitHub Issues
+
+## Debugging
+
+- Setup local access to Redis via CLI and run `SMEMBERS fetched_issues` to make sure you're seeing a list of fetched issues
+- You can run `SCARD fetched_issues` to view the size of the set of fetched issues
