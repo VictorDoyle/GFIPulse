@@ -22,7 +22,7 @@ export async function postIssuesToDiscord(issues: any[], repo: string) {
   const channel = client.channels.cache.get(CHANNEL_ID);
   if (channel && channel.isTextBased()) {
     for (const issue of issues) {
-      console.log(`Formatting message for issue:`, issue);
+      // console.log(`Formatting message for issue:`, issue);
       const issueMessage = formatIssueMessage(issue, repo);
       console.log(`Sending message to Discord: ${issueMessage}`);
       try {
